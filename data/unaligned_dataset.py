@@ -2,6 +2,8 @@ import os.path
 from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_dataset
 from PIL import Image
+from scipy.misc import bytescale
+import numpy as np
 import random
 
 
@@ -31,10 +33,10 @@ class UnalignedDataset(BaseDataset):
         self.A_size = len(self.A_paths)  # get the size of dataset A
         self.B_size = len(self.B_paths)  # get the size of dataset B
         btoA = self.opt.direction == 'BtoA'
-        input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
-        output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
-        self.transform_A = get_transform(self.opt, grayscale=(input_nc == 1))
-        self.transform_B = get_transform(self.opt, grayscale=(output_nc == 1))
+        self.input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
+        self.output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
+        self.transform_A = get_transform(self.opt, grayscale=(self.input_nc == 1))
+        self.transform_B = get_transform(self.opt, grayscale=(self.output_nc == 1))
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -54,8 +56,19 @@ class UnalignedDataset(BaseDataset):
         else:   # randomize the index for domain B to avoid fixed pairs.
             index_B = random.randint(0, self.B_size - 1)
         B_path = self.B_paths[index_B]
-        A_img = Image.open(A_path).convert('RGB')
-        B_img = Image.open(B_path).convert('RGB')
+        A_img = Image.open(A_path)
+        B_img = Image.open(B_path)
+
+        if self.input_nc != 1:  # convert to RGB if the image is not in grayscale format
+            A_img = A_img.convert('RGB')
+        else:
+            A_img = Image.fromarray(bytescale(np.array(A_img))) # convert 16-bit image to 8-bit image
+
+        if self.output_nc != 1:
+            B_img = B_img.convert('RGB')
+        else:
+            B_img = Image.fromarray(bytescale(np.array(B_img))) # convert 16-bit image to 8-bit image
+
         # apply image transformation
         A = self.transform_A(A_img)
         B = self.transform_B(B_img)
