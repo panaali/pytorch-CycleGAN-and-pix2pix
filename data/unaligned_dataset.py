@@ -62,12 +62,12 @@ class UnalignedDataset(BaseDataset):
         if self.input_nc != 1:  # convert to RGB if the image is not in grayscale format
             A_img = A_img.convert('RGB')
         else:
-            A_img = Image.fromarray(bytescale(np.array(A_img))) # convert 16-bit image to 8-bit image
+            A_img = Image.fromarray(bytescale(np.array(A_img))) # convert any (incl. 16-bit) image to 8-bit image
 
         if self.output_nc != 1:
             B_img = B_img.convert('RGB')
         else:
-            B_img = Image.fromarray(bytescale(np.array(B_img))) # convert 16-bit image to 8-bit image
+            B_img = Image.fromarray(bytescale(np.array(B_img))) # convert any (incl. 16-bit) image to 8-bit image
 
         # apply image transformation
         A = self.transform_A(A_img)
