@@ -1,6 +1,7 @@
 import os
 import numpy as np
-import cv2
+from PIL import Image
+from scipy.misc import bytescale
 import argparse
 
 parser = argparse.ArgumentParser('create image pairs')
@@ -42,7 +43,9 @@ for sp in splits:
             if args.use_AB:
                 name_AB = name_AB.replace('_A.', '.')  # remove _A
             path_AB = os.path.join(img_fold_AB, name_AB)
-            im_A = cv2.imread(path_A, cv2.CV_LOAD_IMAGE_COLOR)
-            im_B = cv2.imread(path_B, cv2.CV_LOAD_IMAGE_COLOR)
+            im_A = Image.open(path_A)
+            im_B = Image.open(path_B)
+            im_A = Image.fromarray(bytescale(np.array(im_A)))  # convert any (incl. 16-bit) image to 8-bit image
+            im_B = Image.fromarray(bytescale(np.array(im_B)))  # convert any (incl. 16-bit) image to 8-bit image
             im_AB = np.concatenate([im_A, im_B], 1)
-            cv2.imwrite(path_AB, im_AB)
+            Image.fromarray(im_AB).save(path_AB)
