@@ -4,7 +4,8 @@ from data.base_dataset import BaseDataset, get_params, get_transform
 import torchvision.transforms as transforms
 from data.image_folder import make_dataset
 from PIL import Image
-
+from scipy.misc import bytescale
+import numpy as np
 
 class AlignedDataset(BaseDataset):
     """A dataset class for paired image dataset.
@@ -39,18 +40,36 @@ class AlignedDataset(BaseDataset):
             B_paths (str) - - image paths (same as A_paths)
         """
         # read a image given a random integer index
-        AB_path = self.AB_paths[index]
-        AB = Image.open(AB_path).convert('RGB')
+        AB_path = self.AB_paths[index % len(self.AB_paths)]
+        AB = Image.open(AB_path)
+        if self.input_nc != 1:  # convert to RGB if the image is not in grayscale format
+            AB = AB.convert('RGB')
+        else:
+            AB = Image.fromarray(bytescale(np.array(AB))) # convert any (incl. 16-bit) image to 8-bit image
+
         # split AB image into A and B
         w, h = AB.size
         w2 = int(w / 2)
         A = AB.crop((0, 0, w2, h))
         B = AB.crop((w2, 0, w, h))
 
+        transform_params = get_params(self.opt, A.size)
+        if self.opt.augment_dataset:
+            transform_params['flip'] = False
+
         # apply the same transform to both A and B
         transform_params = get_params(self.opt, A.size)
         A_transform = get_transform(self.opt, transform_params, grayscale=(self.input_nc == 1))
         B_transform = get_transform(self.opt, transform_params, grayscale=(self.output_nc == 1))
+
+        # augmented the dataset
+        if self.opt.augment_dataset:
+            rotation_mode = int(index / len(self.AB_paths)) % 4
+            A.rotate(90 * rotation_mode)
+            B.rotate(90 * rotation_mode)
+            if index > len(self) / 2:
+                A = A.transpose(Image.FLIP_TOP_BOTTOM)
+                B = B.transpose(Image.FLIP_TOP_BOTTOM)
 
         A = A_transform(A)
         B = B_transform(B)
@@ -59,4 +78,6 @@ class AlignedDataset(BaseDataset):
 
     def __len__(self):
         """Return the total number of images in the dataset."""
+        if self.opt.augment_dataset:
+            return len(self.AB_paths) * 8 # if we augment the dataset with all rotation and flips we will get 7 new images.
         return len(self.AB_paths)
