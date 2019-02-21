@@ -35,8 +35,11 @@ class UnalignedDataset(BaseDataset):
         btoA = self.opt.direction == 'BtoA'
         self.input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
         self.output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
-        self.transform_A = get_transform(self.opt, grayscale=(self.input_nc == 1))
-        self.transform_B = get_transform(self.opt, grayscale=(self.output_nc == 1))
+        params = None
+        if self.opt.augment_dataset:
+            params = {'flip': False}
+        self.transform_A = get_transform(self.opt, grayscale=(self.input_nc == 1), params=params)
+        self.transform_B = get_transform(self.opt, grayscale=(self.output_nc == 1), params=params)
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -69,9 +72,27 @@ class UnalignedDataset(BaseDataset):
         else:
             B_img = Image.fromarray(bytescale(np.array(B_img))) # convert any (incl. 16-bit) image to 8-bit image
 
+        # augmentd the dataset
+        if self.opt.augment_dataset:
+            A_rotation_mode = int(index / self.A_size) % 4
+            B_rotation_mode = int(index / self.B_size) % 4
+            # if index > len(self) / 2:
+            #     A_img = (get_augment_transform(rotatation_degree=90 * A_rotation_mode, flip=True))(A_img)
+            #     B_img = (get_augment_transform(rotatation_degree=90 * B_rotation_mode, flip=True))(B_img)
+            # else:
+            #     A_img = (get_augment_transform(rotatation_degree=90 * A_rotation_mode))(A_img)
+            #     B_img = (get_augment_transform(rotatation_degree=90 * B_rotation_mode))(B_img)
+            A_img.rotate(90 * A_rotation_mode)
+            B_img.rotate(90 * B_rotation_mode)
+            if index > len(self) / 2:
+                A_img = A_img.transpose(Image.FLIP_TOP_BOTTOM)
+                B_img = B_img.transpose(Image.FLIP_TOP_BOTTOM)
+
+
         # apply image transformation
         A = self.transform_A(A_img)
         B = self.transform_B(B_img)
+
 
         return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
 
@@ -81,4 +102,6 @@ class UnalignedDataset(BaseDataset):
         As we have two datasets with potentially different number of images,
         we take a maximum of
         """
+        if self.opt.augment_dataset:
+            return max(self.A_size, self.B_size) * 8 # if we augment the dataset with all rotation and flips we will get 7 new images.
         return max(self.A_size, self.B_size)

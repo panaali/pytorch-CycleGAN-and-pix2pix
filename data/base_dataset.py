@@ -89,7 +89,7 @@ def get_transform(opt, params=None, grayscale=False, method=Image.BICUBIC, conve
         transform_list.append(transforms.Lambda(lambda img: __scale_width(img, opt.load_size, method)))
 
     if 'crop' in opt.preprocess:
-        if params is None:
+        if params is None or 'crop_pos' not in params:
             transform_list.append(transforms.RandomCrop(opt.crop_size))
         else:
             transform_list.append(transforms.Lambda(lambda img: __crop(img, params['crop_pos'], opt.crop_size)))
@@ -98,9 +98,9 @@ def get_transform(opt, params=None, grayscale=False, method=Image.BICUBIC, conve
         transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base=4, method=method)))
 
     if not opt.no_flip:
-        if params is None:
+        if params is None or 'flip' not in params:
             transform_list.append(transforms.RandomHorizontalFlip())
-        elif params['flip']:
+        else:
             transform_list.append(transforms.Lambda(lambda img: __flip(img, params['flip'])))
 
     if convert:
@@ -108,7 +108,6 @@ def get_transform(opt, params=None, grayscale=False, method=Image.BICUBIC, conve
                            transforms.Normalize((0.5, 0.5, 0.5),
                                                 (0.5, 0.5, 0.5))]
     return transforms.Compose(transform_list)
-
 
 def __make_power_2(img, base, method=Image.BICUBIC):
     ow, oh = img.size
