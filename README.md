@@ -1,6 +1,43 @@
 <img src='imgs/horse2zebra.gif' align="right" width=384>
 
 <br><br><br>
+# My contribution:
+Sample commands for running with grayscale images:
+
+# For Paired Data:
+## Training Pix2Pix:
+python train.py --dataroot ./dataset_path/paired/ --name experiment_name_01 --model pix2pix --no_dropout  --gpu_ids 0 --batch_size 1 --input_nc 1 --output_nc 1 --preprocess none --direction AtoB --netG unet_256 --norm batch --augment_dataset
+
+## Testing Pix2Pix:
+python test.py --dataroot ./dataset_path/paired/ --name experiment_name_01 --model pix2pix  --input_nc 1 --output_nc 1 --preprocess none
+
+# For Unpaired Data :
+## Training CycleGAN:
+python train.py --dataroot ./dataset_path/unpaired/ --name experiment_name_02 --model cycle_gan --no_dropout --gpu_ids 0,1 --batch_size 2 --input_nc 1 --output_nc 1 --continue_train --netG resnet9blk --norm instance --augment_dataset
+
+## Testing CycleGAN:
+python test.py --dataroot ./dataset_path/unpaired/ --name experiment_name_02 --model cycle_gan  --input_nc 1 --output_nc 1 --preprocess none
+
+Note:
+- The dataset folder structure should match what is described in here 
+
+# For semi-supervised learning:
+The idea is to train the generators with pix2pix first with paired data, then continue training these generators with unpaired data with CycleGAN.
+
+To do so, we need to do these steps:
+Note: the arguments "input_nc, output_nc, preprocess, norm, netG" should be the same for all the models
+
+- train a Pix2Pix model with argument --direction AtoB
+- train a Pix2Pix model with argument --direction BtoA
+- test the Pix2Pix models to see if the results are acceptable
+- create a new folder in ./checkpoints for cyclegan project
+  - $ mkdir ./checkpoints/cyclegan_semi_supervised_01
+- copy generator from pix2pix model to the cyclegan folder and rename them.
+  - $ cp ./checkpoints/pix2pix_experiment_01_AtoB/latest_net_G.pth ./checkpoints/cyclegan_semi_supervised_01/latest_net_G_A.pth
+  - $ cp ./checkpoints/pix2pix_experiment_01_BtoA/latest_net_G.pth ./checkpoints/cyclegan_semi_supervised_01/latest_net_G_B.pth
+- run a CycleGAN model with arguments --name cyclegan_semi_supervised_01 --continue_train
+
+------------------------------------------------------------------------
 
 # CycleGAN and pix2pix in PyTorch
 
