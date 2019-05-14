@@ -19,15 +19,19 @@ import os
 import glob
 import pathlib
 import random
-folder_path = '/Users/aliakbarpanahi/Documents/00-Jobs/GAN/segmentation/DIC/B/train/'
-number_of_new_files = 100
+import argparse
+
+
 
 
 def generate_image(object_library, number_of_unique_objects, shape):
     final_array = np.zeros(shape, dtype='uint16')
-    # same distribution of objects as original dataset
     obj_id = 1
-    for j in range(random.choice(number_of_unique_objects)):
+    # same distribution of objects as original dataset
+    randObj = random.choice(number_of_unique_objects)
+    if randObj < 5:
+        randObj = max(number_of_unique_objects)
+    for j in range(randObj):
         object_array = random.choice(object_library).copy()
         object_array[object_array == 1] = obj_id
         object_image = Image.fromarray(object_array)
@@ -94,7 +98,31 @@ def add_to_object_library(filepath, object_library, number_of_unique_objects, fo
 
     # save original image
     img_scaled = Image.fromarray(bytescale(img_array))
-    img_scaled.save(folder_path_original_scaled + filename + file_extension)
+
+    img_scaled.save(folder_path_original_scaled + filename + '_0' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_1' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_2' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_3' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled = img_scaled.transpose(Image.FLIP_TOP_BOTTOM)
+    img_scaled.save(folder_path_original_scaled + filename + '_4' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_5' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_6' + file_extension)
+
+    img_scaled = img_scaled.rotate(90)
+    img_scaled.save(folder_path_original_scaled + filename + '_7' + file_extension)
+
 
     objects_array = image_filtering(img_array)
     for j in range(0, len(objects_array)):
@@ -108,9 +136,16 @@ def add_to_object_library(filepath, object_library, number_of_unique_objects, fo
         object_library.append(object_image_croped_array)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Augment segmented images.')
+    parser.add_argument('--dir', type=str, default='~/cellchallenge/unpaired/Fluo-C2DL-MSC/trainB/', help='directory of the segmented images')
+    parser.add_argument('--n', type=int, default=100, help='# of generated files')
+    args = parser.parse_args()
+    folder_path = args.dir
+    number_of_new_files = args.n
+
     # Create augmented folder
-    folder_path_original_scaled = folder_path + 'scaled/'
-    folder_path_new = folder_path + 'augmented/'
+    folder_path_original_scaled = folder_path + '../scaled/'
+    folder_path_new = folder_path + '../augmented/'
     if not os.path.exists(folder_path_original_scaled):
         os.makedirs(folder_path_original_scaled)
     if not os.path.exists(folder_path_new):
@@ -119,7 +154,7 @@ if __name__ == '__main__':
     number_of_unique_objects = []
     # Read tif files in the folder_path and add objects in the images to the library
     first = True
-    for filepath in glob.glob(folder_path + '*.tif'):
+    for filepath in glob.glob(folder_path + '/*.tif'):
         if first:
             img = Image.open(filepath)
             images_shape = (img.height, img.width)
@@ -128,6 +163,7 @@ if __name__ == '__main__':
 
     # Generate new images using this library.
     for i in range(number_of_new_files):
+        print(i)
         newImage = generate_image(object_library, number_of_unique_objects, images_shape)
         newImage.save(folder_path_new + str(i) + '.tif')
 
