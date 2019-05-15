@@ -5,7 +5,7 @@ from PIL import Image
 from scipy.misc import bytescale
 import numpy as np
 import random
-
+import torch
 
 class UnalignedDataset(BaseDataset):
     """
@@ -91,6 +91,9 @@ class UnalignedDataset(BaseDataset):
 
         # apply image transformation
         A = self.transform_A(A_img)
+        # assuming the median of the edges of the image is the background color
+        backgroundValue = torch.median(torch.cat((A[0][0], A[0][len(A[0]) - 1], A[0][:, 0], A[0][:, len(A[0][:, 0]) - 1]), 0))
+        A = A.add(backgroundValue.neg()).div(1 + backgroundValue.abs())
         B = self.transform_B(B_img)
 
 
