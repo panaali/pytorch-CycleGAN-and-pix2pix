@@ -62,6 +62,7 @@ class UnalignedDataset(BaseDataset):
         A_img = Image.open(A_path)
         B_img = Image.open(B_path)
 
+
         if self.input_nc != 1:  # convert to RGB if the image is not in grayscale format
             A_img = A_img.convert('RGB')
         else:
@@ -70,7 +71,23 @@ class UnalignedDataset(BaseDataset):
         if self.output_nc != 1:
             B_img = B_img.convert('RGB')
         else:
-            B_img = Image.fromarray(bytescale(np.array(B_img))) # convert any (incl. 16-bit) image to 8-bit image
+            # convert edges to 0
+            B_array_original = np.array(B_img)
+            B_array = np.array(B_img)
+            for i in range(1, len(B_array) - 1):
+                for j in range(1, len(B_array[0]) - 1):
+                    if B_array_original[i][j] != 0:
+                        if B_array_original[i-1][j] != 0 and B_array_original[i-1][j] != B_array_original[i][j]:
+                            B_array[i][j] = 0
+                        elif B_array_original[i+1][j] != 0 and B_array_original[i+1][j] != B_array_original[i][j]:
+                            B_array[i][j] = 0
+                        elif B_array_original[i][j-1] != 0 and B_array_original[i][j-1] != B_array_original[i][j]:
+                            B_array[i][j] = 0
+                        elif B_array_original[i][j+1] != 0 and B_array_original[i][j+1] != B_array_original[i][j]:
+                            B_array[i][j] = 0
+            B_array = np.where(B_array != 0, 1, 0)    # convert gray scale to 0-1 scale
+            B_array = bytescale(B_array)
+            B_img = Image.fromarray(B_array) # convert any (incl. 16-bit) image to 8-bit image
 
         # augmentd the dataset
         if self.opt.augment_dataset:
