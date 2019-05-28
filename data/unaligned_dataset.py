@@ -71,21 +71,24 @@ class UnalignedDataset(BaseDataset):
         if self.output_nc != 1:
             B_img = B_img.convert('RGB')
         else:
+            B_array = np.array(B_img.convert('LA'))[:,:,0]
+            #convert image to 0-1
+            b255 = np.ones(B_array.shape) * 255
+            B_array = np.where(B_array < 250, 0, b255)
             # convert edges to 0
-            B_array_original = np.array(B_img)
-            B_array = np.array(B_img)
-            for i in range(1, len(B_array) - 1):
-                for j in range(1, len(B_array[0]) - 1):
-                    if B_array_original[i][j] != 0:
-                        if B_array_original[i-1][j] != 0 and B_array_original[i-1][j] != B_array_original[i][j]:
-                            B_array[i][j] = 0
-                        elif B_array_original[i+1][j] != 0 and B_array_original[i+1][j] != B_array_original[i][j]:
-                            B_array[i][j] = 0
-                        elif B_array_original[i][j-1] != 0 and B_array_original[i][j-1] != B_array_original[i][j]:
-                            B_array[i][j] = 0
-                        elif B_array_original[i][j+1] != 0 and B_array_original[i][j+1] != B_array_original[i][j]:
-                            B_array[i][j] = 0
-            B_array = np.where(B_array != 0, 1, 0)    # convert gray scale to 0-1 scale
+            # B_array_original = np.array(B_img)
+            # for i in range(1, len(B_array) - 1):
+            #     for j in range(1, len(B_array[0]) - 1):
+            #         if B_array_original[i][j] != 0:
+            #             if B_array_original[i-1][j] != 0 and B_array_original[i-1][j] != B_array_original[i][j]:
+            #                 B_array[i][j] = 0
+            #             elif B_array_original[i+1][j] != 0 and B_array_original[i+1][j] != B_array_original[i][j]:
+            #                 B_array[i][j] = 0
+            #             elif B_array_original[i][j-1] != 0 and B_array_original[i][j-1] != B_array_original[i][j]:
+            #                 B_array[i][j] = 0
+            #             elif B_array_original[i][j+1] != 0 and B_array_original[i][j+1] != B_array_original[i][j]:
+            #                 B_array[i][j] = 0
+            # B_array = np.where(B_array != 0, 1, 0)    # convert gray scale to 0-1 scale
             B_array = bytescale(B_array)
             B_img = Image.fromarray(B_array) # convert any (incl. 16-bit) image to 8-bit image
 
@@ -109,8 +112,8 @@ class UnalignedDataset(BaseDataset):
         # apply image transformation
         A = self.transform_A(A_img)
         # assuming the median of the edges of the image is the background color
-        backgroundValue = torch.median(torch.cat((A[0][0], A[0][len(A[0]) - 1], A[0][:, 0], A[0][:, len(A[0][:, 0]) - 1]), 0))
-        A = A.add(backgroundValue.neg()).div(1 + backgroundValue.abs())
+        # backgroundValue = torch.median(torch.cat((A[0][0], A[0][len(A[0]) - 1], A[0][:, 0], A[0][:, len(A[0][:, 0]) - 1]), 0))
+        # A = A.add(backgroundValue.neg()).div(1 + backgroundValue.abs())
         B = self.transform_B(B_img)
 
 
