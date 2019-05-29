@@ -71,10 +71,11 @@ class UnalignedDataset(BaseDataset):
         if self.output_nc != 1:
             B_img = B_img.convert('RGB')
         else:
-            B_array = np.array(B_img.convert('LA'))[:,:,0]
+            B_array = np.array(B_img)
+            # B_array = np.array(B_img.convert('LA'))[:,:,0]
             #convert image to 0-1
-            b255 = np.ones(B_array.shape) * 255
-            B_array = np.where(B_array < 250, 0, b255)
+            # b255 = np.ones(B_array.shape) * 255
+            # B_array = np.where(B_array < 250, 0, b255)
             # convert edges to 0
             # B_array_original = np.array(B_img)
             # for i in range(1, len(B_array) - 1):
